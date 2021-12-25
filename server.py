@@ -2,41 +2,34 @@ from socket import*
 import threading
 import time
 import random
+import struct
 
 wait = True
-def waiting(msg, clientAddress):
+answer = []
+server_tcp = None
+
+def waiting(msg, clientAddress, server_udp):
     while wait:
         server_udp.sendto(msg,clientAddress)
         time.sleep(1)
+    server_udp.close()
 
-#UPD
-server_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-server_udp.bind(('',13117))
-print ("Server started, listening on IP address 172.1.0.36")
-server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-port = 3333 
-thread = threading.Thread(target=waiting, args=("Server started, listening on IP address 172.1.0.36".encode(), ('<broadcast>', 13117)))
-thread.start()
+def getAnswer(player, conn):
+    answer.append((conn.recv(1024).decode(),player))
 
-#TCP
-server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_tcp.bind(("172.1.0.36", port))
-server_tcp.listen(2)
-conn1, addr1 = server_tcp.accept()
-# client_thread1 = threading.Thread(target= )
-conn2, addr2 = server_tcp.accept()
 
-def game(conn1):
+def game(conn1,conn2):
     conn1.send("Please enter your name: U+1F920".encode())
+    conn2.send("Please enter your name: U+1F920".encode())
     name1 = conn1.recv(1024).decode()
-    name2 = None
+    name2 = conn2.recv(1024).decode()
     num1= random.randint(0,9)
     num2= random.randint(0,9-num1)
     operator = ["+","-"]
     place = random.randit(0,1)
     quest = ""
     result = 0
+
     if num1 > num2:
         quest = str(num1)+operator[place]+str(num2)
         if place == 0:
@@ -58,27 +51,68 @@ def game(conn1):
         How much is {quest}?
         """
     conn1.send(msg.encode())
-    timer = time.time()
-    if time.time() - timer == 10:
-        pass
+    conn2.send(msg.encode())
     
-    ans = conn1.recv(1024).decode()
+    thread1 = threading.Thread(target = getAnswer, args=(1,conn1))
+    thread2 = threading.Thread(target = getAnswer, args=(2,conn2))
+    thread1.start()
+    thread2.start()
+    timer = time.time()
 
+    while time.time() - timer < 10:
+        if answer[0] != None:
+            thread1.join()
+            thread2.join()
+            break
+    
     msg = ""
-    if int(ans) == result:
+    if int(answer[0][0]) == result:
         msg = \
             f"""
             Game over!
             The correct answer was {result}!
-            Congratulations to the winner: {name1}
+            Congratulations to the winner: {answer[0][1]}
             """
     else: 
         msg = \
             f"""
             Game over!
             The correct answer was {result}!
-            Congratulations to the winner: {name2}
+            The game finished with a draw.
             """
 
     conn1.send(msg.encode())
     conn1.close()
+    conn2.send(msg.encode())
+    conn2.close()
+    conn1 = conn2 = None
+    print("Game over, sending out offer requests...")
+    protocol()
+
+def protocol():
+    #UPD
+    server_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+    server_udp.bind(('',13117))
+    print ("Server started, listening on IP address 172.1.0.36")
+    server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    server_udp.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    port = 3333 
+    thread = threading.Thread(target=waiting, args=(struct.pack('LBH',0xabcddcba, 0x2, port), ('<broadcast>', 13117),server_udp))
+    thread.start()
+
+
+    #TCP
+    if server_tcp == None:
+        server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_tcp.bind(("172.1.0.36", port))
+    server_tcp.listen(2)
+    conn1 = conn2 = addr1 = addr2 = None
+
+    while not (conn1 and conn2):
+        if conn1 == None and conn2 == None:
+            conn1, addr1 = server_tcp.accept() 
+        else: conn2, addr2 = server_tcp.accept()
+    wait = False
+    game(conn1,conn2)
+
+protocol()
