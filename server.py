@@ -15,6 +15,7 @@ def waiting(msg, clientAddress, server_udp):
     server_udp.close()
 
 def getAnswer(player, conn):
+    global answer
     answer.append((conn.recv(1024).decode(),player))
 
 
@@ -90,6 +91,8 @@ def game(conn1,conn2):
     protocol()
 
 def protocol():
+    global server_tcp
+    global wait
     #UPD
     server_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     server_udp.bind(('',13117))
@@ -106,7 +109,8 @@ def protocol():
         server_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_tcp.bind(("172.1.0.36", port))
     server_tcp.listen(2)
-    conn1 = conn2 = addr1 = addr2 = None
+    conn1 = conn2 = None
+    #addr1 = addr2 = None
 
     while not (conn1 and conn2):
         if conn1 == None and conn2 == None:
