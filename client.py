@@ -40,7 +40,7 @@ def protocol():
         #UDP
         port = 3333
         client_udp = socket(AF_INET,SOCK_DGRAM)
-        client_udp.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        client_udp.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         client_udp.bind(('',port))
         print("Client started, listenning for offer requests...")
         msg = addr =  None

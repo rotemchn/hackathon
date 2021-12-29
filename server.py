@@ -115,10 +115,10 @@ def protocol():
         server_udp = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
         server_udp.bind(('',13117))
         print ("Server started, listening on IP address 172.1.0.36")
-        server_udp.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
+        server_udp.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         server_udp.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
         port = 3333 
-        thread = threading.Thread(target=waiting, args=(struct.pack('LBH',0xabcddcba, 0x2, port), ('<broadcast>',   13117),server_udp))
+        thread = threading.Thread(target=waiting, args=(struct.pack('IBH',0xabcddcba, 0x2, port), ('<broadcast>',   13117),server_udp))
         thread.start()
 
 
@@ -135,6 +135,7 @@ def protocol():
                 conn1, addr1 = server_tcp.accept() 
             else: conn2, addr2 = server_tcp.accept()
         wait = False
+        
         game(conn1,conn2)
     except Exception as e:
         pass
