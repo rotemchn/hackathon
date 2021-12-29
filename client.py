@@ -16,7 +16,8 @@ def getAnswer():
 
 def game(conn):
     try:
-        quest = conn.recv(1024).decode()
+        conn.send("Nemo".encode())
+        quest = conn.recv(2048).decode()
         print(quest)
         timer = time.time()
         thread = threading.Thread(target = getAnswer, args = ())
@@ -26,7 +27,7 @@ def game(conn):
                 conn.send(answer.encode())
                 break
         thread.join()
-        winner =  conn.recv(1024).decode() 
+        winner =  conn.recv(2048).decode() 
         print(winner)
         protocol()
     except Exception as e:
@@ -44,18 +45,18 @@ def protocol():
         print("Client started, listenning for offer requests...")
         msg = addr =  None
         while msg != None:
-            msg,addr = client_udp.recvfrom(1024)
-            cookie,msgType,port=struct.unpack('>IBH',msg)
-            if hex(int(cookie))!=hex(2882395322) or int(msgType)!=2:
+            msg,addr = client_udp.recvfrom(2048)
+            cookie,msgType,port=struct.unpack('IBH',msg)
+            if cookie!=0xabcddcba or msgType!=0x2:
                 continue
         client_udp.close()
 
 
         #TCP
-        print("Received offer from "+str(addr)+", attempting to connect...")
+        print("Received offer from "+str(addr[0])+", attempting to connect...")
         if client_tcp == None:
             client_tcp = socket(AF_INET, SOCK_STREAM)
-        client_tcp.connect((gethostname(),port))
+        client_tcp.connect((addr[0],port))
 
         game(client_tcp)
     except Exception as e:

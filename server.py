@@ -20,7 +20,7 @@ def waiting(msg, clientAddress, server_udp):
 def getAnswer(player, conn):
     try:
         global answer
-        answer.append((conn.recv(1024).decode(),player))
+        answer.append((conn.recv(2048).decode(),player))
     except Exception as e:
         pass
 
@@ -29,8 +29,8 @@ def game(conn1,conn2):
     try:
         conn1.send("Please enter your name: U+1F920".encode())
         conn2.send("Please enter your name: U+1F920".encode())
-        name1 = conn1.recv(1024).decode()
-        name2 = conn2.recv(1024).decode()
+        name1 = conn1.recv(2048).decode()
+        name2 = conn2.recv(2048).decode()
         num1= random.randint(0,9)
         num2= random.randint(0,9-num1)
         operator = ["+","-"]
