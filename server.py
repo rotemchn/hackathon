@@ -66,20 +66,28 @@ def game(conn1,conn2):
             thread2.join()
             break
     
+    
     msg = ""
-    if int(answer[0][0]) == result:
+    if len(answer)==0:
         msg = \
             f"""
             Game over!
             The correct answer was {result}!
-            Congratulations to the winner: {answer[0][1]}
+            The game finished with a draw.
+            """
+    elif int(answer[0][0]) == result:
+        msg = \
+            f"""
+            Game over!
+            The correct answer was {result}!
+            Congratulations to the winner: {name1 if answer[0][1]==1 else name2}
             """
     else: 
         msg = \
             f"""
             Game over!
             The correct answer was {result}!
-            The game finished with a draw.
+            Congratulations to the winner: {name2 if answer[0][1]==1 else name1}
             """
 
     conn1.send(msg.encode())
